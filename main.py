@@ -17,19 +17,25 @@ COLOUR_PALETTE = ["#FAF1E4".lower(), "#CEDEBD".lower(), "#9EB384".lower(), "#435
 def open_image():
     global file_path
     file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png *.gif *.bmp")])
-    with Image.open(file_path) as image:
-        image_to_watermark = image
-        img_width = image.width
-        img_height = image.height
-        ratio = 20
-        #Utworzenie miniatury do poglądu
-        image.thumbnail((img_width/ratio, img_height/ratio))
-        #Utworzenie ramki
-        photo_with_frame = ImageOps.expand(image, border=FRAME_THICKNESS, fill=COLOUR_PALETTE[1])
-        photo = ImageTk.PhotoImage(photo_with_frame)
-        #Przypisanie miniatury do etykiety
-        picture_miniature.config(image=photo)
-        picture_miniature.image = photo
+    try:
+        with Image.open(file_path) as image:
+            pass
+    except AttributeError:
+        pass
+    else:
+        with Image.open(file_path) as image:
+            image_to_watermark = image
+            img_width = image.width
+            img_height = image.height
+            ratio = 20
+            #Utworzenie miniatury do poglądu
+            image.thumbnail((img_width/ratio, img_height/ratio))
+            #Utworzenie ramki
+            photo_with_frame = ImageOps.expand(image, border=FRAME_THICKNESS, fill=COLOUR_PALETTE[1])
+            photo = ImageTk.PhotoImage(photo_with_frame)
+            #Przypisanie miniatury do etykiety
+            picture_miniature.config(image=photo)
+            picture_miniature.image = photo
 
 
 # ---------------------------- WATERMARKING AN `IMAGE` ------------------------------- #
@@ -40,22 +46,33 @@ def add_watermark():
         text = text_entry.get()
         size = size_entry.get()
         font = font_entry.get()
-        font_truetype = ImageFont.truetype(f"{font.lower()}.ttf", int(size))
+        try:
+            font_truetype = ImageFont.truetype(f"{font.lower()}.ttf", int(size))
+        except OSError:
+            messagebox.showinfo(title="Oops", message="Enter proper font name.")
+        except ValueError:
+            messagebox.showinfo(title="Oops", message="Enter proper font size.")
+        else:
+            text_color = (255, 255, 255)
+            text_position = (100, 100)
 
-        text_color = (255, 255, 255)
-        text_position = (100, 100)
+            try:
+                with Image.open(file_path) as image_to_watermark:
+                    pass
+            except NameError:
+                messagebox.showinfo(title="Oops", message="Add a picture")
+            else:
+                with Image.open(file_path) as image_to_watermark:
+                    draw = ImageDraw.Draw(image_to_watermark)
+                    draw.text(text_position, text, fill=text_color, font=font_truetype)
+                    file_path_clean = file_path.rsplit("/", 1)[0]
+                    target_file_path = file_path_clean + "/watermark/"
+                    if not os.path.exists(target_file_path):
+                        os.makedirs(target_file_path)
+                    file_name = file_path.split("/")[-1]
+                    image_to_watermark.save(target_file_path + file_name)
 
-        with Image.open(file_path) as image_to_watermark:
-            draw = ImageDraw.Draw(image_to_watermark)
-            draw.text(text_position, text, fill=text_color, font=font_truetype)
-            file_path_clean = file_path.rsplit("/", 1)[0]
-            target_file_path = file_path_clean + "/watermark/"
-            if not os.path.exists(target_file_path):
-                os.makedirs(target_file_path)
-            file_name = file_path.split("/")[-1]
-            image_to_watermark.save(target_file_path + file_name)
-
-        task_completed.config(text="Task Completed!", font=(FONT_NAME, 25), bg=COLOUR_PALETTE[0], fg=COLOUR_PALETTE[2])#Tu coś nie trybi i nie wiem czemu od początku się komunikat wyświetlas
+                    task_completed.config(text="Task Completed!", font=(FONT_NAME, 25), bg=COLOUR_PALETTE[0], fg=COLOUR_PALETTE[2])#Tu coś nie trybi i nie wiem czemu od początku się komunikat wyświetlas
 
 
 
